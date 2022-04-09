@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 import argparse
 import json
 import os
@@ -26,6 +28,23 @@ For a directory:
   'updated_at': 'Sat, 09 Apr 2022 12:15:43 -0000'},
 
 """
+
+def recursively_search_files(base, d=6):
+    
+    if d == 0: # Security
+        return []
+
+    base = base.rstrip("/") + "/" # Be sure you have the ending slash.
+
+    lst = []
+    for filename in os.listdir(base):
+        if os.path.isdir(base + filename):
+            lst.extend(recursively_search_files(base+filename, d-1))
+
+        else:
+            lst.append(base + filename)
+    
+    return lst
 
 def display_item(file_info, l_prune=0, date=False, size=False, hs=False, nmax=20):
     """Items' printer
@@ -59,6 +78,7 @@ def display_item(file_info, l_prune=0, date=False, size=False, hs=False, nmax=20
 if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description='Neo-CLI, a CLI for Neocities website management.')
+    #parser.add_argument("cmd", type=str, help="Option.")
     
 
     subparsers = parser.add_subparsers()
@@ -96,7 +116,24 @@ if __name__ == "__main__":
             help="Display document size.")
     
     
+    # Adding files
+    parser_update = subparsers.add_parser('update', help="Push files to your website")
+    
+    parser_update.set_defaults(cmd='update', help="Update command.")
+    parser_update.add_argument('local_files',  type=str, nargs='+',
+                    help='Files to upload.')
+    parser_update.add_argument("--remote_path", default="", type=str,
+            help="Where to push documents.")
 
+    parser_update.add_argument("--rec", action="store_true",
+            help="Would recursively add the content of a folder.")
+
+    # Delete documents / folders
+    parser_delete = subparsers.add_parser('delete', help="Delete files or directory.")
+    
+    parser_delete.set_defaults(cmd='delete', help="Remove items.")
+    parser_delete.add_argument('remote_files',  type=str, nargs='+',
+                    help='Remote files or dir to remove.')
 
     args = parser.parse_args()
     
@@ -120,7 +157,7 @@ if __name__ == "__main__":
             print("Error")
             print(resp.content.decode())
     
-    elif args.cmd in ["list"]:
+    elif args.cmd in ["list", "update", "delete"]:
         if os.path.exists(PATH_API) == False:
             print("No API Key registred.")
             sys.exit(1)
@@ -185,7 +222,63 @@ if __name__ == "__main__":
                     display_item(items, 0, args.date, args.size, args.hash, n)
 
 
-        
+        elif args.cmd == "update":
+            print("UPLOAD")
+            print("path to send everything", args.remote_path)
+            print("things to put there", args.local_files)
+            # If we list a directory, we assume we push everything bellow.
+            # If we push a file, we add everything under.
+
+            VERB = "upload"
+            send_path = args.remote_path.rstrip('/')
+
+            lst = [] # (local location, future name)
+            for filename in args.local_files:     
+
+                if os.path.isdir(filename) == False:
+                    keep_name = filename.rsplit("/", 1)[-1]
+                    lst.append([filename, keep_name])
+                
+                elif args.rec:
+                    subfiles = recursively_search_files(filename)
+                    l0 = len(filename.rstrip('/'))
+                    l1 = len(filename.rstrip("/").rsplit("/", 1)[-1])
+                    lst.extend(list(map(lambda x: (x, x[l0-l1:]), subfiles)))
+
+                    
+            # When debbugging
+            #print(lst)
+            
+            # send {"filename": "string content"}
+            for (filename, remote_name) in lst:
+
+                print("Opening {}".format(filename), end="")
+                with open(filename, "rb") as fp:
+                    data = fp.read()
+                    print("\tRead ok", end="")
+                    
+                    resp = requests.post("{}{}".format(URL_API, VERB), 
+                            headers=payload, 
+                            files={"{}/{}".format(send_path, remote_name): data})
+                    print("\tSend: {}".format(resp.status_code))
+
+
+            
+        elif args.cmd == "delete":
+            print("Would remove stuff remotely.")
+            
+            VERB = "delete"
+            
+            for filename in args.remote_files:
+                #file_list = { # Multiple files
+                #    "filenames[]": ["test/third.md", "test/second.txt"],
+                #}
+
+                file_list = {"filenames[]": filename} # One file
+                print("Removing {}".format(filename), end="\t")
+                resp = requests.post("{}{}".format(URL_API, VERB), headers=payload, data=file_list)
+                print(resp.status_code)
+
 
 
     else:
