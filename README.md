@@ -160,6 +160,7 @@ IMG/img3.png
 ```
 
 
+
 ## Deleting stuff
 
 Suppose you have this initial config
