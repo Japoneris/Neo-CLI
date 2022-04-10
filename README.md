@@ -21,10 +21,10 @@ This alternative CLI is here to provide the basic functions:
 
 - [Setup](#setup)
 - [Usage](#cli-usage)
-    - [Authentication: Getting you API key](##authentication)
-    - [Listing the documents you have](##list)
-    - [Updating your site content](##update)
-    - [Removing stuff](##delete)
+    - [Authentication: Getting you API key](#authentication)
+    - [Listing the documents you have](#list)
+    - [Updating your site content](#update)
+    - [Removing stuff](#delete)
 - [Todo (if you want to contribute)](#todo)
 - [Support](#support)
 
