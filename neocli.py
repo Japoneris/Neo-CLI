@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import argparse
+import getpass
 import json
 import os
 import requests
@@ -8,6 +9,10 @@ import sys
 
 PATH_API = "./API_KEY.txt"
 URL_API = 'https://neocities.org/api/'
+
+COLOR_DEFAULT = "\033[0;37;40m"
+COLOR_DIR  = "\033[1;34;40m"
+COLOR_FILE = "\033[1;32;40m"
 
 """
 Format received from "list"
@@ -58,17 +63,21 @@ def display_item(file_info, l_prune=0, date=False, size=False, hs=False, nmax=20
     """
 
     if file_info["is_directory"]:
-        print("\t{}{}/".format(
+        print("\t{}{}{}/{}".format(
+                COLOR_DIR,
                 file_info["updated_at"] + " \t" if date else "",
-                file_info["path"][l_prune:])
+                file_info["path"][l_prune:],
+                COLOR_DEFAULT)
                 )
 
     else:
-        print("\t{}{}\t{}\t{}".format(
+        print("\t{}{}{}\t{}\t{}{}".format(
+                COLOR_FILE,
                 file_info["updated_at"] + " \t" if date else "",
                 file_info["path"][l_prune:] + " " * (nmax + 2 - l_prune - len(file_info["path"])),
                 file_info["size"] if size else "",
                 file_info["sha1_hash"] if hs else "",
+                COLOR_DEFAULT,
                 )
              )
 
@@ -82,6 +91,10 @@ if __name__ == "__main__":
     
 
     subparsers = parser.add_subparsers()
+
+    # Retrieve key
+    parser_auth = subparsers.add_parser('auth', help="Authentication.")
+    parser_auth.set_defaults(cmd='auth')
 
     # Key storage
     parser_key = subparsers.add_parser('add_key', help="Would save the provided key into a file.")
@@ -137,7 +150,27 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     
-    if args.cmd == "add_key":
+    if args.cmd == "auth":
+        print("== Authentication ==")
+        user = input("Input username (lowercase): ")
+        password = getpass.getpass("Input password: ")
+        
+        resp = requests.get("{}key".format(URL_API), auth=(user, password))
+        
+        if resp.status_code == 200:
+            api_key = json.loads(resp.content.decode())["api_key"]
+            print("Success !")
+            print("Storing you API key at {}".format(PATH_API))
+            with open(PATH_API, "w") as fp:
+                fp.write(api_key)
+
+        else:
+            print("Error code: {}".format(resp.status_code))
+            print(resp.content.decode())
+
+
+    elif args.cmd == "add_key":
+        print("== Manually add the key ==")
         print("Saving key `{}` at {}".format(args.key, PATH_API))
         
         
@@ -149,6 +182,7 @@ if __name__ == "__main__":
 
 
     elif args.cmd == "info":
+        print("== Get website info ==")
         VERB = "info"
         resp = requests.get("{}{}".format(URL_API, VERB), data={"sitename": args.website})
         if resp.status_code == 200:
@@ -159,7 +193,7 @@ if __name__ == "__main__":
     
     elif args.cmd in ["list", "update", "delete"]:
         if os.path.exists(PATH_API) == False:
-            print("No API Key registred.")
+            print("No API Key registred. \n== Exit ==")
             sys.exit(1)
         
         # Load the API
@@ -180,7 +214,6 @@ if __name__ == "__main__":
                 sys.exit(1)
 
             website = json.loads(resp.content.decode())
-            print(website["result"]) # Must be "success"
             
             path = args.path 
             if len(args.path) > 0:

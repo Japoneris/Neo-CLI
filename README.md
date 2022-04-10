@@ -16,19 +16,55 @@ This alternative CLI is here to provide the basic functions:
 - adding / updating files
 - removing elements
 
+## Table of Content
+
+
+- [Setup](#setup)
+- [Usage](#cli-usage)
+    - [Authentication: Getting you API key](##authentication)
+    - [Listing the documents you have](##list)
+    - [Updating your site content](##update)
+    - [Removing stuff](##delete)
+- [Todo (if you want to contribute)](#todo)
+- [Support](#support)
+
+
+
 # Setup 
 
-## API key 
+## Python3
 
-You need to retrieve your API key using the official neocities CLI.
-Then, add it in the file `API_file.txt`.
+You need `python3` to run this script.
+You do not need to install any particular libraries.
+
 
 ## Executable
 
+You can turn the file into an executable:
+
 `chmod +x neocity.py`
 
+So, instead of running `python3 neocli.py <command>`, you have a shorter input `./neocli.py <command>`.
 
-# Usage 
+
+
+# CLI Usage 
+
+## Authentication
+
+Retrieve your API key
+
+`./neocities auth`
+
+Then, you would have a prompt:
+```bash
+== Authentication ==
+Input username (lowercase): japoneris
+Input password:
+Success !
+Storing you API key at ./API_KEY.txt
+
+```
 
 
 ## List 
@@ -161,7 +197,7 @@ IMG/img3.png
 
 
 
-## Deleting stuff
+## Delete
 
 Suppose you have this initial config
 
