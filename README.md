@@ -127,6 +127,24 @@ src/doc2.html
 src/styles/doc3.txt
 ``` 
 
+## Size 
+
+Getting the total size of a folder.
+
+`./neocli.py size` 
+
+would measure the total size of your website.
+
+```bash 
+Check the size of a folder
+Found 1243 files
+Total size: 232.7 Mo
+```
+
+You can specify the folder you want to look at by adding `--path`:
+
+`./neocli.py size --path="blog/"` 
+
 ## Update 
 
 Suppose I want to send one image in a folder that may not exist.
@@ -232,10 +250,6 @@ img3.png
 
 # Todo 
 
-## Listing
-
-- [ ] Count files under a directory (so you know if it is interesting to dive into it)
-- [ ] Check the size of a folder (for the same reason)
 
 
 ## Locate 

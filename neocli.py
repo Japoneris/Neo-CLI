@@ -108,6 +108,7 @@ if __name__ == "__main__":
     
     parser_info.set_defaults(cmd='info')
     parser_info.add_argument("website", type=str, help="The website you want info about. Return JSON info.")
+    
 
     # Listing
     parser_list = subparsers.add_parser('list', help="Help you to list documents/folders of your website.")
@@ -128,7 +129,14 @@ if __name__ == "__main__":
     parser_list.add_argument("--size", action="store_true",
             help="Display document size.")
     
+    # Size of a folder
+    parser_size = subparsers.add_parser('size', help="Get the size of a folder.")
     
+    parser_size.set_defaults(cmd='size', help="Count the total size.")
+    
+    parser_size.add_argument("--path", default="", type=str, help="Folder to investigate.")
+
+
     # Adding files
     parser_update = subparsers.add_parser('update', help="Push files to your website")
     
@@ -191,7 +199,7 @@ if __name__ == "__main__":
             print("Error")
             print(resp.content.decode())
     
-    elif args.cmd in ["list", "update", "delete"]:
+    elif args.cmd in ["list", "size", "update", "delete"]:
         if os.path.exists(PATH_API) == False:
             print("No API Key registred. \n== Exit ==")
             sys.exit(1)
@@ -253,6 +261,39 @@ if __name__ == "__main__":
                 print("Under the root, files/doc:")
                 for items in website_items:
                     display_item(items, 0, args.date, args.size, args.hash, n)
+
+        elif args.cmd == "size":
+            print("Check the size of a folder")
+
+            resp = requests.get("{}list".format(URL_API), headers=payload)
+            
+            if resp.status_code != 200:
+                print("Error: {}".format(resp.status_code))
+                print(resp.content)
+                sys.exit(1)
+
+            website = json.loads(resp.content.decode())
+            
+            folder = args.path 
+            if len(folder) > 0:
+                folder = folder.rstrip("/") + "/"
+            
+            website_items = list(filter(lambda x: x["path"].startswith(args.path), website["files"]))
+            website_items = list(filter(lambda x: x["is_directory"] == False, website_items))
+            size_tot = sum(map(lambda x: x["size"], website_items))
+
+            lst = ["ko", "Mo", "Go"]
+            label = "o"
+            for lb in lst:
+                if size_tot > 1024:
+                    label = lb
+                    size_tot /= 1024
+                else:
+                    break
+
+            print("Found {} files".format(len(website_items)))
+            print("Total size: {:.5} {}".format(size_tot, label))
+
 
 
         elif args.cmd == "update":
