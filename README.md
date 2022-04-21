@@ -251,10 +251,7 @@ img3.png
 # Todo 
 
 
-
-## Locate 
-
-- [ ] When you search for a file ... Use grep with pattern matching is enough.
+- [ ] Optimal update: use the sha1 of the files to push updated or new.
 
 
 # Support 

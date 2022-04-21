@@ -2,6 +2,7 @@
 
 import argparse
 import getpass
+import hashlib
 import json
 import os
 import requests
@@ -83,6 +84,19 @@ def display_item(file_info, l_prune=0, date=False, size=False, hs=False, nmax=20
 
     return
 
+def get_tree(path):
+    """Allows to list all the files recursively in a folder
+    """
+    if os.path.isdir(path):
+        path = path.rstrip("/") + "/"
+        lst = []
+        for file in os.listdir(path):
+            lst.extend(get_tree(path + file))
+        return lst
+
+    else:
+        return [path]
+
 
 if __name__ == "__main__":
     
@@ -128,7 +142,13 @@ if __name__ == "__main__":
             help="Display hash.")
     parser_list.add_argument("--size", action="store_true",
             help="Display document size.")
-    
+ 
+    # Update local (uncomplete)
+    parser_opti = subparsers.add_parser('opti', help="Make an optimal update of all the files that changed.")
+    parser_opti.set_defaults(cmd='opti', help="Compare your website to your repo.")
+    parser_opti.add_argument("path", type=str,
+            help="Location of your site content.")
+
     # Size of a folder
     parser_size = subparsers.add_parser('size', help="Get the size of a folder.")
     
@@ -199,7 +219,7 @@ if __name__ == "__main__":
             print("Error")
             print(resp.content.decode())
     
-    elif args.cmd in ["list", "size", "update", "delete"]:
+    elif args.cmd in ["list", "size", "update", "delete", "opti"]:
         if os.path.exists(PATH_API) == False:
             print("No API Key registred. \n== Exit ==")
             sys.exit(1)
@@ -261,6 +281,58 @@ if __name__ == "__main__":
                 print("Under the root, files/doc:")
                 for items in website_items:
                     display_item(items, 0, args.date, args.size, args.hash, n)
+
+        elif args.cmd == "opti":
+            print("Compare states.")
+            resp = requests.get("{}list".format(URL_API), headers=payload)
+            if resp.status_code != 200:
+                print("Error: {}".format(resp.status_code))
+                print(resp.content)
+                sys.exit(1)
+            
+            website = json.loads(resp.content.decode())
+            list_files = website["files"]
+            list_files = list(filter(lambda x: x["is_directory"] == False, list_files))
+            
+            # Get the website hash
+            dico = {}
+            for item in list_files:
+                dico[item["path"]] = item["sha1_hash"]
+
+            all_files = get_tree(args.path)
+            
+            l0 = len(args.path)
+            new_file = set(list(map(lambda x: x[l0:], all_files))) - set(dico)
+            mis_file = set(dico) - set(list(map(lambda x: x[l0:], all_files))) 
+            old_file = set(list(map(lambda x: x[l0:], all_files))) & set(dico)
+            print("{} new files".format(len(new_file)))
+            print("{} old files".format(len(old_file)))
+            print("{} missing files".format(len(mis_file)))
+
+            print("="*40)
+            lst_to_update = []
+            for idx, f in enumerate(old_file):
+                hs = dico[f]
+                print(idx, f, end="\r")
+                with open("{}{}".format(args.path, f), "rb") as fp:
+                    m = hashlib.sha1()
+                    m.update(fp.read())
+                    hs1 = m.hexdigest()
+                    if hs1 != hs:
+                        lst_to_update.append(f)
+            
+            print("{} files to update".format(len(lst_to_update)))
+            print("="*40)
+            print("== New ==")
+            for f in sorted(new_file):
+                print(f)
+
+            print("== To up ==")
+            for f in sorted(lst_to_update):
+                print(f)
+            
+            print("END: Function uncomplete")
+
 
         elif args.cmd == "size":
             print("Check the size of a folder")
