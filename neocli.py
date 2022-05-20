@@ -143,11 +143,14 @@ if __name__ == "__main__":
     parser_list.add_argument("--size", action="store_true",
             help="Display document size.")
  
-    # Update local (uncomplete)
+    # Update files that have been modified and new files (uncomplete)
     parser_opti = subparsers.add_parser('opti', help="Make an optimal update of all the files that changed.")
     parser_opti.set_defaults(cmd='opti', help="Compare your website to your repo.")
     parser_opti.add_argument("path", type=str,
             help="Location of your site content.")
+    parser_opti.add_argument("--debug", action="store_true",
+            help="Only list what will be updated.")
+
 
     # Size of a folder
     parser_size = subparsers.add_parser('size', help="Get the size of a folder.")
@@ -311,29 +314,46 @@ if __name__ == "__main__":
 
             print("="*40)
             lst_to_update = []
+            l_old = len(old_file)
             for idx, f in enumerate(old_file):
                 hs = dico[f]
-                print(idx, f, end="\r")
+                print("Checking {} / {}\t{}".format(idx, l_old, f))
                 with open("{}{}".format(args.path, f), "rb") as fp:
                     m = hashlib.sha1()
                     m.update(fp.read())
                     hs1 = m.hexdigest()
                     if hs1 != hs:
                         lst_to_update.append(f)
-            
-            print("{} files to update".format(len(lst_to_update)))
+            print("==> {} modified files".format(len(lst_to_update)))
             print("="*40)
-            print("== New ==")
+            print("== New files ==")
             for f in sorted(new_file):
                 print(f)
 
-            print("== To up ==")
+            print("== To update ==")
             for f in sorted(lst_to_update):
                 print(f)
             
-            print("END: Function uncomplete")
+            if args.debug:
+                print("Debug mode: exiting.")
+            else:
+                print("== Updating the distant repository ==")
+                for remote_name in sorted(list(new_file) + lst_to_update):
+
+                    filename = args.path + remote_name
+                    print("Opening {}".format(filename), end="")
+                    with open(filename, "rb") as fp:
+                        data = fp.read()
+                        print("\tRead ok", end="")
+                    
+                        resp = requests.post("{}upload".format(URL_API), 
+                                headers=payload, 
+                                files={"{}".format(remote_name): data})
+                        print("\tSend: {}".format(resp.status_code))
 
 
+
+            
         elif args.cmd == "size":
             print("Check the size of a folder")
 

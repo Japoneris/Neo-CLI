@@ -214,6 +214,25 @@ IMG/img3.png
 ```
 
 
+## Optimal Update
+
+Instead of sending again all documents that are already in the website AND unmodified,
+the script check:
+
+- If the file exists
+- And if it does exist, if it has been modified by comparing the hash.
+
+You simply need to write:
+
+`./neocli.py opti my_roo_website_folder/`
+
+If you want to check what would be updated WITHOUT actually updating the distant folder, add `--debug` flag. 
+It will list the files that will be updated.
+
+
+
+
+
 
 ## Delete
 
@@ -250,8 +269,7 @@ img3.png
 
 # Todo 
 
-
-- [ ] Optimal update: use the sha1 of the files to push updated or new.
+- [ ] Clean the code
 
 
 # Support 
