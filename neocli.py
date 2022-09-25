@@ -158,6 +158,8 @@ if __name__ == "__main__":
     parser_size.set_defaults(cmd='size', help="Count the total size.")
     
     parser_size.add_argument("--path", default="", type=str, help="Folder to investigate.")
+    parser_size.add_argument("--save", default=False,action="store_true",
+            help="Save file information into a default file `size.txt`.")
 
 
     # Adding files
@@ -385,7 +387,19 @@ if __name__ == "__main__":
 
             print("Found {} files".format(len(website_items)))
             print("Total size: {:.5} {}".format(size_tot, label))
-
+            
+            if args.save:
+                os.makedirs("snapshots", exist_ok=True)
+                
+                print("Saving information into the folder `snapshots`")
+                with open("snapshots/latest.json", "w") as fp:
+                    json.dump(website["files"], fp, indent=True)
+                    
+                import time
+                with open("snapshots/T_{}.json".format(int(time.time())), "w") as fp:
+                    json.dump(website["files"], fp, indent=True)
+                    
+                
 
 
         elif args.cmd == "update":
