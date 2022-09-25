@@ -54,7 +54,7 @@ So, instead of running `python3 neocli.py <command>`, you have a shorter input `
 
 Retrieve your API key
 
-`./neocities auth`
+`./neocli.py auth`
 
 Then, you would have a prompt:
 ```bash
